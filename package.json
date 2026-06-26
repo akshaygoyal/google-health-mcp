@@ -7,7 +7,10 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "kv:create": "wrangler kv namespace create HEALTH_TOKENS",
-    "token:setup": "node --experimental-strip-types scripts/get-refresh-token.ts"
+    "token:setup": "node --experimental-strip-types scripts/get-refresh-token.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hono/mcp": "^0.2.0",
@@ -18,8 +21,11 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241004.0",
     "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "husky": "^9.1.7",
     "open": "^10.1.0",
     "typescript": "^5.6.0",
+    "vitest": "^4.1.9",
     "wrangler": "^3.80.0"
   }
 }
