@@ -13,7 +13,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
   - **Health metrics**: `get_body_composition`, `get_blood_glucose`, `get_temperature`, `get_respiratory_rate`
   - **Nutrition**: `get_nutrition`, `get_food`
 - Full `DataType` constant coverage for all 38 supported Google Health API data types
-- 31 new test cases (67 total)
+- 46 new test cases (82 total), achieving 100% statement and line coverage
+- Rewrote README with badges, conversation examples, and clearer setup guide
 
 ## [0.1.0] - 2026-06-26
 

@@ -90,17 +90,62 @@ AI:     During your 27-minute run on June 24 (3.76 km):
 
 ## Available tools
 
+**Activity & Fitness**
+
 | Tool | Description |
 |------|-------------|
 | `get_daily_summary` | Steps, calories and distance for a date range |
 | `get_steps_history` | Daily step counts for trend analysis |
-| `get_heart_rate` | Raw heart rate samples + daily resting HR |
 | `get_exercise_sessions` | Logged workouts with duration, distance, type |
-| `get_sleep` | Sleep sessions and stages |
-| `get_spo2` | Blood oxygen saturation readings |
+| `get_active_energy` | Daily active calories burned (excludes BMR) |
+| `get_active_minutes` | Daily active minutes and active zone minutes |
+| `get_floors` | Daily floors climbed |
+| `get_altitude` | Altitude readings |
+| `get_sedentary_periods` | Inactive/sedentary periods |
+| `get_activity_level` | Activity level classifications (sedentary → intense) |
+| `get_swim_sessions` | Swim sessions with lengths and stroke data |
+
+**Cardio & Heart**
+
+| Tool | Description |
+|------|-------------|
+| `get_heart_rate` | Raw heart rate samples + daily resting HR |
+| `get_heart_rate_variability` | HRV samples and daily HRV |
+| `get_heart_rate_zones` | Time and calories in each heart rate zone |
+| `get_vo2_max` | VO2 max, run VO2 max, and daily VO2 max |
+| `get_irregular_rhythm_notifications` | AFib / irregular rhythm alerts |
+| `get_ecg` | Electrocardiogram recordings |
+
+**Health Metrics**
+
+| Tool | Description |
+|------|-------------|
+| `get_spo2` | Blood oxygen saturation (SpO2) readings |
 | `get_weight` | Weight measurements over time |
-| `get_raw_data_points` | Query any Google Health data type by ID |
-| `check_progress_vs_target` | Compare your recent average against a goal |
+| `get_body_composition` | Body fat percentage and height |
+| `get_blood_glucose` | Blood glucose readings |
+| `get_temperature` | Core body temperature and sleep temperature derivations |
+| `get_respiratory_rate` | Daily respiratory rate and sleep respiratory summary |
+
+**Sleep**
+
+| Tool | Description |
+|------|-------------|
+| `get_sleep` | Sleep sessions and stages |
+
+**Nutrition**
+
+| Tool | Description |
+|------|-------------|
+| `get_nutrition` | Daily hydration and nutrition log summaries |
+| `get_food` | Logged food entries |
+
+**Utilities**
+
+| Tool | Description |
+|------|-------------|
+| `get_raw_data_points` | Query any Google Health data type by its raw ID |
+| `check_progress_vs_target` | Compare your recent daily average against a target |
 | `health_connection_status` | Check token health / debug connection issues |
 
 ---
@@ -199,7 +244,7 @@ npm run dev
 
 ## Data types
 
-The `get_raw_data_points` tool accepts any identifier from the [Google Health data types reference](https://developers.google.com/health/data-types), e.g. `body-fat`, `vo2-max`, `blood-glucose`. There are 48 data types in total — only a subset have dedicated tools today.
+All 38 Google Health API data types have dedicated tools. The `get_raw_data_points` tool is also available for querying any type by its raw identifier — see the [Google Health data types reference](https://developers.google.com/health/data-types) for the full list.
 
 ---
 

@@ -61,6 +61,15 @@ describe("health_connection_status", () => {
     const data = JSON.parse(result.content[0].text);
     expect(data.hasRefreshToken).toBe(true);
   });
+
+  it("returns an error result when KV throws", async () => {
+    const env = makeEnv({
+      HEALTH_TOKENS: { get: async () => { throw new Error("KV failure"); } } as unknown as KVNamespace,
+    });
+    const tools = captureTools(env);
+    const result = await tools["health_connection_status"]({}) as { isError: boolean };
+    expect(result.isError).toBe(true);
+  });
 });
 
 // ─── get_daily_summary ───────────────────────────────────────────────────────
@@ -94,6 +103,13 @@ describe("get_steps_history", () => {
     const data = JSON.parse(result.content[0].text);
     expect(data.dataPoints).toHaveLength(1);
   });
+
+  it("returns an error result on API failure", async () => {
+    stubFetchError(500, "error");
+    const tools = captureTools(envWithToken());
+    const result = await tools["get_steps_history"]({ startDate: "2026-05-01", endDate: "2026-05-31" }) as { isError: boolean };
+    expect(result.isError).toBe(true);
+  });
 });
 
 // ─── get_heart_rate ──────────────────────────────────────────────────────────
@@ -106,6 +122,13 @@ describe("get_heart_rate", () => {
     const data = JSON.parse(result.content[0].text);
     expect(data).toHaveProperty("samples");
     expect(data).toHaveProperty("restingHeartRate");
+  });
+
+  it("returns an error result on API failure", async () => {
+    stubFetchError(500, "error");
+    const tools = captureTools(envWithToken());
+    const result = await tools["get_heart_rate"]({ startDate: "2026-05-01", endDate: "2026-05-31" }) as { isError: boolean };
+    expect(result.isError).toBe(true);
   });
 });
 
@@ -274,6 +297,13 @@ describe("check_progress_vs_target", () => {
     const data = JSON.parse(result.content[0].text);
     expect(data.target).toBe(10000);
     expect(data).toHaveProperty("rawDailyData");
+  });
+
+  it("returns an error result on API failure", async () => {
+    stubFetchError(500, "error");
+    const tools = captureTools(envWithToken());
+    const result = await tools["check_progress_vs_target"]({ dataType: "steps", target: 10000, startDate: "2026-05-01", endDate: "2026-05-31" }) as { isError: boolean };
+    expect(result.isError).toBe(true);
   });
 });
 
