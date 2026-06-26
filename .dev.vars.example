@@ -1,0 +1,6 @@
+# Copy this to .dev.vars (gitignored) for local `wrangler dev` testing.
+# In production these are set with `wrangler secret put <NAME>` instead.
+
+MCP_SHARED_SECRET=replace-with-a-long-random-string
+GOOGLE_CLIENT_ID=replace-with-your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=replace-with-your-client-secret

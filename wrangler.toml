@@ -1,0 +1,17 @@
+# Cloudflare Worker configuration.
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "google-health-mcp"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# KV namespace used to store your Google OAuth refresh token + cached access token.
+# Run `npm run kv:create` and paste the returned `id` below.
+[[kv_namespaces]]
+binding = "HEALTH_TOKENS"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+# Secrets (set with `wrangler secret put <NAME>`, never written here):
+#   MCP_SHARED_SECRET      - random string embedded in your connector URL
+#   GOOGLE_CLIENT_ID       - from Google Cloud OAuth client
+#   GOOGLE_CLIENT_SECRET   - from Google Cloud OAuth client
