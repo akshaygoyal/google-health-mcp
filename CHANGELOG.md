@@ -4,6 +4,17 @@ All notable changes to this project will be documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-26
+
+### Added
+- 18 new tools covering all remaining Google Health API data types:
+  - **Activity**: `get_active_energy`, `get_active_minutes`, `get_floors`, `get_altitude`, `get_sedentary_periods`, `get_activity_level`, `get_swim_sessions`
+  - **Cardio**: `get_vo2_max`, `get_heart_rate_variability`, `get_heart_rate_zones`, `get_irregular_rhythm_notifications`, `get_ecg`
+  - **Health metrics**: `get_body_composition`, `get_blood_glucose`, `get_temperature`, `get_respiratory_rate`
+  - **Nutrition**: `get_nutrition`, `get_food`
+- Full `DataType` constant coverage for all 38 supported Google Health API data types
+- 31 new test cases (67 total)
+
 ## [0.1.0] - 2026-06-26
 
 ### Added

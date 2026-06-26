@@ -235,4 +235,300 @@ export function registerTools(server: McpServer, env: Env): void {
       }
     }
   );
+
+  // ─── Activity & Fitness ──────────────────────────────────────────────────
+
+  server.tool(
+    "get_active_energy",
+    "Get daily active energy burned (calories from activity, not BMR) for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await getDailyRollUp(env, DataType.activeEnergyBurned, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_active_minutes",
+    "Get daily active minutes and active zone minutes for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [activeMinutes, activeZoneMinutes] = await Promise.all([
+          getDailyRollUp(env, DataType.activeMinutes, startDate, endDate),
+          getDailyRollUp(env, DataType.activeZoneMinutes, startDate, endDate),
+        ]);
+        return jsonResult({ activeMinutes, activeZoneMinutes });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_floors",
+    "Get daily floors climbed for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await getDailyRollUp(env, DataType.floors, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_altitude",
+    "Get altitude readings for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await listDataPoints(env, DataType.altitude, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_sedentary_periods",
+    "Get sedentary (inactive) periods for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await listDataPoints(env, DataType.sedentaryPeriod, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_activity_level",
+    "Get activity level classifications (sedentary, light, moderate, intense) for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await reconcileDataPoints(env, DataType.activityLevel, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_swim_sessions",
+    "Get swim workout sessions for a date range, including lengths and stroke data.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await listDataPoints(env, DataType.swimLengthsData, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  // ─── Cardio & Heart ──────────────────────────────────────────────────────
+
+  server.tool(
+    "get_vo2_max",
+    "Get VO2 max readings for a date range: raw VO2 max samples, run-specific VO2 max, " +
+      "and daily VO2 max. Note: these types do not support server-side date filtering — " +
+      "all recorded values are returned.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [vo2Max, runVo2Max, dailyVo2Max] = await Promise.all([
+          listDataPointsUnfiltered(env, DataType.vo2Max),
+          listDataPointsUnfiltered(env, DataType.runVo2Max),
+          listDataPointsUnfiltered(env, DataType.dailyVo2Max),
+        ]);
+        return jsonResult({ vo2Max, runVo2Max, dailyVo2Max });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_heart_rate_variability",
+    "Get heart rate variability (HRV) data for a date range. Note: these types do not " +
+      "support server-side date filtering — all recorded values are returned.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [hrv, dailyHrv] = await Promise.all([
+          listDataPointsUnfiltered(env, DataType.heartRateVariability),
+          listDataPointsUnfiltered(env, DataType.dailyHeartRateVariability),
+        ]);
+        return jsonResult({ heartRateVariability: hrv, dailyHeartRateVariability: dailyHrv });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_heart_rate_zones",
+    "Get heart rate zone data for a date range: daily zone summaries, time spent in " +
+      "each zone, and calories burned per zone.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [dailyZones, timeInZones, caloriesInZones] = await Promise.all([
+          listDataPointsUnfiltered(env, DataType.dailyHeartRateZones),
+          getDailyRollUp(env, DataType.timeInHeartRateZone, startDate, endDate),
+          getDailyRollUp(env, DataType.caloriesInHeartRateZone, startDate, endDate),
+        ]);
+        return jsonResult({ dailyZones, timeInZones, caloriesInZones });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_irregular_rhythm_notifications",
+    "Get irregular heart rhythm (AFib) notifications. Note: does not support server-side " +
+      "date filtering — all recorded notifications are returned.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await listDataPointsUnfiltered(env, DataType.irregularRhythmNotification);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_ecg",
+    "Get electrocardiogram (ECG) recordings. Note: does not support server-side date " +
+      "filtering — all recorded ECGs are returned.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await listDataPointsUnfiltered(env, DataType.electrocardiogram);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  // ─── Health Metrics ──────────────────────────────────────────────────────
+
+  server.tool(
+    "get_body_composition",
+    "Get body composition data (body fat percentage and height) for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [bodyFat, height] = await Promise.all([
+          getDailyRollUp(env, DataType.bodyFat, startDate, endDate),
+          listDataPointsUnfiltered(env, DataType.height),
+        ]);
+        return jsonResult({ bodyFat, height });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_blood_glucose",
+    "Get blood glucose readings for a date range.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await getDailyRollUp(env, DataType.bloodGlucose, startDate, endDate);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_temperature",
+    "Get body temperature data for a date range: core body temperature readings and " +
+      "daily sleep temperature derivations.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [coreTemp, sleepTempDerivations] = await Promise.all([
+          getDailyRollUp(env, DataType.coreBodyTemperature, startDate, endDate),
+          listDataPointsUnfiltered(env, DataType.dailySleepTemperatureDerivations),
+        ]);
+        return jsonResult({ coreBodyTemperature: coreTemp, sleepTemperatureDerivations: sleepTempDerivations });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_respiratory_rate",
+    "Get respiratory rate data for a date range. Note: these types do not support " +
+      "server-side date filtering — all recorded values are returned.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [daily, sleepSummary] = await Promise.all([
+          listDataPointsUnfiltered(env, DataType.dailyRespiratoryRate),
+          listDataPointsUnfiltered(env, DataType.respiratoryRateSleepSummary),
+        ]);
+        return jsonResult({ dailyRespiratoryRate: daily, sleepSummary });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  // ─── Nutrition ───────────────────────────────────────────────────────────
+
+  server.tool(
+    "get_nutrition",
+    "Get nutrition and hydration data for a date range: daily hydration log and " +
+      "nutrition log summaries.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const [hydration, nutrition] = await Promise.all([
+          getDailyRollUp(env, DataType.hydrationLog, startDate, endDate),
+          getDailyRollUp(env, DataType.nutritionLog, startDate, endDate),
+        ]);
+        return jsonResult({ hydration, nutrition });
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "get_food",
+    "Get logged food entries. Note: does not support server-side date filtering — " +
+      "all recorded entries are returned.",
+    { startDate: dateParam(), endDate: dateParam() },
+    async ({ startDate, endDate }) => {
+      try {
+        const data = await listDataPointsUnfiltered(env, DataType.food);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
 }

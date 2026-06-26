@@ -1,18 +1,92 @@
-# Google Health MCP Server
+# Google Health MCP
 
-An [MCP](https://modelcontextprotocol.io) server that connects any MCP-compatible AI client to the [Google Health API](https://developers.google.com/health), giving you access to your health and fitness data directly in AI conversations.
+[![CI](https://github.com/akshaygoyal/google-health-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/akshaygoyal/google-health-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Deploy time: ~10 min](https://img.shields.io/badge/deploy%20time-~10%20min-blue)](#setup)
 
-Runs as a Cloudflare Worker — deploy your own instance in ~10 minutes.
+> Ask your AI assistant about your own health data — steps, sleep, runs, heart rate, weight and more. Self-host in ~10 minutes on Cloudflare's free tier.
 
-Compatible with **Claude**, **Cursor**, **Windsurf**, **Zed**, **VS Code (Copilot)**, **Continue.dev**, and any other MCP-compatible client.
+Works with **Claude**, **Cursor**, **Windsurf**, **Zed**, **VS Code (Copilot)**, **Continue.dev**, and any other [MCP](https://modelcontextprotocol.io)-compatible client.
 
-## What you can ask
+---
 
-- "How many steps did I take last week?"
-- "Show me my sleep data for the past month"
-- "What was my resting heart rate trend in May?"
-- "Summarize my exercise sessions this year"
-- "How does my SpO2 look over the last 30 days?"
+## See it in action
+
+> 💡 GIFs coming soon — [contributions welcome!](https://github.com/akshaygoyal/google-health-mcp/issues)
+
+### Monthly exercise recap
+
+```
+You:    Summarise my exercise sessions for May
+
+AI:     You logged 39 sessions in May — 2 runs and 37 walks.
+
+        Highlights:
+        • May 9  — Long run: 21.4 km in 2h 56m (looks like a half marathon effort!)
+        • May 5  — Run: 5.1 km in 39 min
+        • May 25 — Most active day: 7 walks, ~6.5 km total
+
+        You were most active in the last week of May (May 22–31),
+        with activity on 8 out of 10 days.
+```
+
+### Sleep check-in
+
+```
+You:    How did I sleep last week?
+
+AI:     Here's your sleep for Jun 16–22:
+
+        Mon  7h 42m  ██████████████████░░░░
+        Tue  6h 55m  ████████████████░░░░░░
+        Wed  8h 03m  ████████████████████░░
+        Thu  7h 20m  ██████████████████░░░░
+        Fri  6h 30m  ███████████████░░░░░░░
+        Sat  8h 45m  █████████████████████░
+        Sun  7h 55m  ████████████████████░░
+
+        Average: 7h 36m. Saturday was your best night.
+        Tuesday and Friday were slightly under 7 hours.
+```
+
+### Progress towards a goal
+
+```
+You:    Am I hitting 10,000 steps a day this month?
+
+AI:     Over the last 30 days your daily average is 8,340 steps —
+        about 83% of your 10,000-step target.
+
+        You hit the goal on 11 out of 30 days.
+        Best day: June 20 with 14,200 steps.
+        Weekends tend to be stronger than weekdays for you.
+```
+
+### Heart rate during a run
+
+```
+You:    What was my heart rate during my run on June 24?
+
+AI:     During your 27-minute run on June 24 (3.76 km):
+
+        Average heart rate: 180 bpm
+        That puts it firmly in Zone 4 (threshold/hard effort).
+        Your resting HR that day was 58 bpm — roughly 3× baseline.
+```
+
+---
+
+## More things you can ask
+
+- *"How has my resting heart rate changed over the last 3 months?"*
+- *"Did I average more than 7 hours of sleep in June?"*
+- *"Compare my step counts this week vs last week."*
+- *"What's my average SpO2 at night?"*
+- *"How much have I walked vs run this year?"*
+- *"Show me my weight trend since January."*
+- *"Which day of the week am I most active?"*
+
+---
 
 ## Available tools
 
@@ -29,18 +103,24 @@ Compatible with **Claude**, **Cursor**, **Windsurf**, **Zed**, **VS Code (Copilo
 | `check_progress_vs_target` | Compare your recent average against a goal |
 | `health_connection_status` | Check token health / debug connection issues |
 
+---
+
 ## Prerequisites
 
 - [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier is sufficient)
 - [Google Cloud project](https://console.cloud.google.com) with the Health API enabled
 - Node.js 18+
 
+---
+
 ## Setup
+
+7 steps, ~10 minutes.
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/google-health-mcp.git
+git clone https://github.com/akshaygoyal/google-health-mcp.git
 cd google-health-mcp
 npm install
 ```
@@ -97,13 +177,15 @@ https://google-health-mcp.<your-workers-subdomain>.workers.dev/mcp/<MCP_SHARED_S
 
 ### 7. Connect your MCP client
 
-Add the URL above as a custom MCP server in your AI client. Some examples:
+Add the URL above as a custom MCP server in your AI client:
 
 - **Claude.ai** → Customize → Integrations → Add integration URL
 - **Cursor** → Settings → MCP → Add server URL
 - **Windsurf** → Settings → MCP Servers → Add
 - **VS Code (Copilot)** → `.vscode/mcp.json` → add server entry
 - **Continue.dev** → `config.json` → `mcpServers` array
+
+---
 
 ## Local development
 
@@ -113,15 +195,21 @@ cp .dev.vars.example .dev.vars
 npm run dev
 ```
 
+---
+
 ## Data types
 
-The `get_raw_data_points` tool accepts any identifier from the [Google Health data types reference](https://developers.google.com/health/data-types), e.g. `body-fat`, `vo2-max`, `blood-glucose`.
+The `get_raw_data_points` tool accepts any identifier from the [Google Health data types reference](https://developers.google.com/health/data-types), e.g. `body-fat`, `vo2-max`, `blood-glucose`. There are 48 data types in total — only a subset have dedicated tools today.
+
+---
 
 ## Security
 
 - The MCP endpoint is only accessible via a secret URL — treat it like a password
 - This server is **read-only**: it never writes data back to Google Health
 - Your refresh token is stored in Cloudflare KV, encrypted at rest
+
+---
 
 ## Staying up to date
 
@@ -139,9 +227,23 @@ If new tools aren't showing up in your AI client after a deployment, disconnect 
 
 If a release changes the Google OAuth scopes (check the [CHANGELOG](CHANGELOG.md)), you'll need to re-run `npm run token:setup` to get a new refresh token with the updated permissions.
 
+---
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a full history of releases and what changed in each version.
+
+---
+
+## Feedback & contributions
+
+Tried it? Found a bug? Want a new data type added?
+
+👉 **[Open an issue](https://github.com/akshaygoyal/google-health-mcp/issues)** — feedback of any kind is very welcome, especially from first-time users.
+
+If you'd like to contribute, please read the [contributing guide](CONTRIBUTING.md) first.
+
+---
 
 ## License
 
