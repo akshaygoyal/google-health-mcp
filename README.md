@@ -12,8 +12,6 @@ Works with **Claude**, **Cursor**, **Windsurf**, **Zed**, **VS Code (Copilot)**,
 
 ## See it in action
 
-> 💡 GIFs coming soon — [contributions welcome!](https://github.com/akshaygoyal/google-health-mcp/issues)
-
 ### Monthly exercise recap
 
 ```
