@@ -139,6 +139,10 @@ If new tools aren't showing up in your AI client after a deployment, disconnect 
 
 If a release changes the Google OAuth scopes (check the [CHANGELOG](CHANGELOG.md)), you'll need to re-run `npm run token:setup` to get a new refresh token with the updated permissions.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a full history of releases and what changed in each version.
+
 ## License
 
 MIT
