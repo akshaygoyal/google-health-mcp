@@ -10,7 +10,7 @@
     "token:setup": "node --experimental-strip-types scripts/get-refresh-token.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "prepare": "node -e \"if (process.env.CI) process.exit(0)\" && husky || true"
   },
   "dependencies": {
     "@hono/mcp": "^0.2.0",
