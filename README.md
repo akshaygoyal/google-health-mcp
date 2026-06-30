@@ -176,13 +176,14 @@ npm install
 4. Add `http://127.0.0.1:8765/callback` as an authorised redirect URI
 5. Note your **Client ID** and **Client Secret**
 
-### 3. Create a Cloudflare KV namespace
+### 3. Configure wrangler.toml
 
 ```bash
+cp wrangler.toml.example wrangler.toml
 npm run kv:create
 ```
 
-Copy the returned `id` and paste it into `wrangler.toml` under `[[kv_namespaces]]`.
+Copy the returned `id` and paste it into `wrangler.toml` under `[[kv_namespaces]]`. This file is gitignored so your KV namespace ID stays off GitHub.
 
 ### 4. Set secrets in Cloudflare
 
@@ -266,8 +267,9 @@ No redeployment needed — the new KV entry is picked up immediately.
 ## Local development
 
 ```bash
+cp wrangler.toml.example wrangler.toml  # if not done already
 cp .dev.vars.example .dev.vars
-# Fill in .dev.vars with your credentials
+# Fill in both files with your credentials
 npm run dev
 ```
 

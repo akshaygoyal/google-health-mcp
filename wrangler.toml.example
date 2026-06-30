@@ -1,5 +1,7 @@
 # Cloudflare Worker configuration.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+#
+# Copy this file to wrangler.toml (gitignored) and fill in your values.
 
 name = "google-health-mcp"
 main = "src/index.ts"
