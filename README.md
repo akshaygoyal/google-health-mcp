@@ -197,14 +197,16 @@ wrangler secret put GOOGLE_CLIENT_SECRET
 
 ### 5. Get your Google refresh token
 
+Choose a short ID for yourself (letters, numbers, hyphens, underscores — e.g. `alice` or `me`):
+
 ```bash
-GOOGLE_CLIENT_ID=your-id GOOGLE_CLIENT_SECRET=your-secret npm run token:setup
+GOOGLE_CLIENT_ID=your-id GOOGLE_CLIENT_SECRET=your-secret npm run token:setup -- --user=alice
 ```
 
 This opens a browser for Google consent. After approving, copy the printed command and run it:
 
 ```bash
-wrangler kv key put --binding=HEALTH_TOKENS google_refresh_token "your-refresh-token"
+wrangler kv key put --binding=HEALTH_TOKENS "user:alice:refresh_token" "your-refresh-token"
 ```
 
 ### 6. Deploy
@@ -213,20 +215,51 @@ wrangler kv key put --binding=HEALTH_TOKENS google_refresh_token "your-refresh-t
 npm run deploy
 ```
 
-Your MCP server is now live at:
+Your MCP server is now live. Each user's connector URL is:
 ```
-https://google-health-mcp.<your-workers-subdomain>.workers.dev/mcp/<MCP_SHARED_SECRET>
+https://google-health-mcp.<your-workers-subdomain>.workers.dev/mcp/<userId>/<MCP_SHARED_SECRET>
+```
+
+For example, the user `alice` would connect to:
+```
+https://google-health-mcp.<your-workers-subdomain>.workers.dev/mcp/alice/<MCP_SHARED_SECRET>
 ```
 
 ### 7. Connect your MCP client
 
-Add the URL above as a custom MCP server in your AI client:
+Add your personal URL as a custom MCP server in your AI client:
 
 - **Claude.ai** → Customize → Integrations → Add integration URL
 - **Cursor** → Settings → MCP → Add server URL
 - **Windsurf** → Settings → MCP Servers → Add
 - **VS Code (Copilot)** → `.vscode/mcp.json` → add server entry
 - **Continue.dev** → `config.json` → `mcpServers` array
+
+---
+
+## Adding more users
+
+Each additional user needs their own Google consent and their own KV entry — the Worker and all secrets are shared.
+
+```bash
+# On the new user's machine (they need your GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET):
+GOOGLE_CLIENT_ID=your-id GOOGLE_CLIENT_SECRET=your-secret npm run token:setup -- --user=bob
+```
+
+Run the printed `wrangler kv key put` command to store their refresh token:
+
+```bash
+wrangler kv key put --binding=HEALTH_TOKENS "user:bob:refresh_token" "bobs-refresh-token"
+```
+
+Bob's connector URL is then:
+```
+https://google-health-mcp.<your-workers-subdomain>.workers.dev/mcp/bob/<MCP_SHARED_SECRET>
+```
+
+No redeployment needed — the new KV entry is picked up immediately.
+
+> **Security note:** `MCP_SHARED_SECRET` is a shared gate — anyone who has *any* user's URL already knows the secret and could construct URLs for other user IDs. Only share the server with people you trust, and keep the secret itself private.
 
 ---
 
@@ -248,9 +281,10 @@ All 38 Google Health API data types have dedicated tools. The `get_raw_data_poin
 
 ## Security
 
-- The MCP endpoint is only accessible via a secret URL — treat it like a password
+- Each user's MCP endpoint URL (`/mcp/<userId>/<MCP_SHARED_SECRET>`) is their only credential — treat it like a password
+- `MCP_SHARED_SECRET` is a shared worker-level secret; `userId` is a namespace, not an additional auth factor — see the note in [Adding more users](#adding-more-users)
 - This server is **read-only**: it never writes data back to Google Health
-- Your refresh token is stored in Cloudflare KV, encrypted at rest
+- Refresh tokens are stored in Cloudflare KV, encrypted at rest, namespaced per user
 
 ---
 
@@ -268,7 +302,7 @@ No re-setup of secrets or KV is needed — those persist across deployments.
 
 If new tools aren't showing up in your AI client after a deployment, disconnect and reconnect the integration — most MCP clients cache the tool list from when you first connected.
 
-If a release changes the Google OAuth scopes (check the [CHANGELOG](CHANGELOG.md)), you'll need to re-run `npm run token:setup` to get a new refresh token with the updated permissions.
+If a release changes the Google OAuth scopes (check the [CHANGELOG](CHANGELOG.md)), each user will need to re-run `npm run token:setup -- --user=<userId>` to get a new refresh token with the updated permissions.
 
 ---
 
