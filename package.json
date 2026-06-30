@@ -1,6 +1,6 @@
 {
   "name": "google-health-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "An MCP server that exposes Google Health API data (steps, sleep, heart rate, SpO2, weight, exercise) to any MCP-compatible AI client via a Cloudflare Worker.",
   "scripts": {
