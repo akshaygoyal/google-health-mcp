@@ -24,11 +24,12 @@ export class GoogleHealthApiError extends Error {
 
 async function callGoogleHealth(
   env: Env,
+  userId: string,
   path: string,
   searchParams?: Record<string, string>,
   body?: unknown
 ): Promise<unknown> {
-  const accessToken = await getAccessToken(env);
+  const accessToken = await getAccessToken(env, userId);
   const url = new URL(`${BASE_URL}${path}`);
   if (searchParams) {
     for (const [key, value] of Object.entries(searchParams)) {
@@ -66,12 +67,14 @@ function civilTimeFilter(startDate: string, endDate: string): string {
 
 export async function getDailyRollUp(
   env: Env,
+  userId: string,
   dataType: string,
   startDate: string,
   endDate: string
 ): Promise<unknown> {
   return callGoogleHealth(
     env,
+    userId,
     `/dataTypes/${dataType}/dataPoints:dailyRollUp`,
     undefined,
     {
@@ -85,11 +88,12 @@ export async function getDailyRollUp(
 
 export async function listDataPoints(
   env: Env,
+  userId: string,
   dataType: string,
   startDate: string,
   endDate: string
 ): Promise<unknown> {
-  return callGoogleHealth(env, `/dataTypes/${dataType}/dataPoints`, {
+  return callGoogleHealth(env, userId, `/dataTypes/${dataType}/dataPoints`, {
     filter: civilTimeFilter(startDate, endDate),
   });
 }
@@ -97,14 +101,16 @@ export async function listDataPoints(
 /** List data points without a filter — needed for types like `sleep` that don't support the `interval` filter field. */
 export async function listDataPointsUnfiltered(
   env: Env,
+  userId: string,
   dataType: string
 ): Promise<unknown> {
-  return callGoogleHealth(env, `/dataTypes/${dataType}/dataPoints`);
+  return callGoogleHealth(env, userId, `/dataTypes/${dataType}/dataPoints`);
 }
 
 /** Paginate through all pages of an unfiltered list, collecting all dataPoints. */
 export async function listAllDataPointsUnfiltered(
   env: Env,
+  userId: string,
   dataType: string
 ): Promise<{ dataPoints: unknown[] }> {
   const allPoints: unknown[] = [];
@@ -115,6 +121,7 @@ export async function listAllDataPointsUnfiltered(
     if (pageToken) params.pageToken = pageToken;
     const page = await callGoogleHealth(
       env,
+      userId,
       `/dataTypes/${dataType}/dataPoints`,
       Object.keys(params).length ? params : undefined
     ) as { dataPoints?: unknown[]; nextPageToken?: string };
@@ -127,11 +134,12 @@ export async function listAllDataPointsUnfiltered(
 
 export async function reconcileDataPoints(
   env: Env,
+  userId: string,
   dataType: string,
   startDate: string,
   endDate: string
 ): Promise<unknown> {
-  return callGoogleHealth(env, `/dataTypes/${dataType}/dataPoints:reconcile`, {
+  return callGoogleHealth(env, userId, `/dataTypes/${dataType}/dataPoints:reconcile`, {
     filter: civilTimeFilter(startDate, endDate),
   });
 }

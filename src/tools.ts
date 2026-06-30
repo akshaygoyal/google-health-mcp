@@ -50,7 +50,7 @@ function jsonResult(data: unknown) {
   };
 }
 
-export function registerTools(server: McpServer, env: Env): void {
+export function registerTools(server: McpServer, env: Env, userId: string): void {
   server.tool(
     "health_connection_status",
     "Check whether this server has a valid Google Health connection " +
@@ -59,7 +59,7 @@ export function registerTools(server: McpServer, env: Env): void {
     {},
     async () => {
       try {
-        const status = await getTokenStatus(env);
+        const status = await getTokenStatus(env, userId);
         return jsonResult(status);
       } catch (err) {
         return errorResult(err);
@@ -74,9 +74,9 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [steps, calories, distance] = await Promise.all([
-          getDailyRollUp(env, DataType.steps, startDate, endDate),
-          getDailyRollUp(env, DataType.calories, startDate, endDate),
-          getDailyRollUp(env, DataType.distance, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.steps, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.calories, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.distance, startDate, endDate),
         ]);
         return jsonResult({ steps, calories, distance });
       } catch (err) {
@@ -91,7 +91,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await getDailyRollUp(env, DataType.steps, startDate, endDate);
+        const data = await getDailyRollUp(env, userId, DataType.steps, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -107,8 +107,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [samples, restingHr] = await Promise.all([
-          reconcileDataPoints(env, DataType.heartRate, startDate, endDate),
-          getDailyRollUp(env, DataType.dailyRestingHeartRate, startDate, endDate),
+          reconcileDataPoints(env, userId, DataType.heartRate, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.dailyRestingHeartRate, startDate, endDate),
         ]);
         return jsonResult({ samples, restingHeartRate: restingHr });
       } catch (err) {
@@ -124,7 +124,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const raw = await listAllDataPointsUnfiltered(env, DataType.exercise) as { dataPoints?: Array<{ exercise?: { interval?: { startTime?: string } } }> };
+        const raw = await listAllDataPointsUnfiltered(env, userId, DataType.exercise) as { dataPoints?: Array<{ exercise?: { interval?: { startTime?: string } } }> };
         const startMs = new Date(`${startDate}T00:00:00Z`).getTime();
         const endMs = new Date(`${endDate}T23:59:59Z`).getTime();
         const data = {
@@ -151,7 +151,7 @@ export function registerTools(server: McpServer, env: Env): void {
       try {
         // The "sleep" data type doesn't support the interval filter field,
         // so we fetch all points and filter client-side by date.
-        const data = await listDataPointsUnfiltered(env, DataType.sleep);
+        const data = await listDataPointsUnfiltered(env, userId, DataType.sleep);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -166,8 +166,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [raw, daily] = await Promise.all([
-          listDataPoints(env, DataType.oxygenSaturation, startDate, endDate),
-          getDailyRollUp(env, DataType.dailyOxygenSaturation, startDate, endDate),
+          listDataPoints(env, userId, DataType.oxygenSaturation, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.dailyOxygenSaturation, startDate, endDate),
         ]);
         return jsonResult({ samples: raw, dailySummary: daily });
       } catch (err) {
@@ -182,7 +182,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPoints(env, DataType.weight, startDate, endDate);
+        const data = await listDataPoints(env, userId, DataType.weight, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -200,7 +200,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { dataType: z.string().describe("Raw Google Health API data type identifier, e.g. 'steps'"), startDate: dateParam(), endDate: dateParam() },
     async ({ dataType, startDate, endDate }) => {
       try {
-        const data = await listDataPoints(env, dataType, startDate, endDate);
+        const data = await listDataPoints(env, userId, dataType, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -228,7 +228,7 @@ export function registerTools(server: McpServer, env: Env): void {
     },
     async ({ dataType, target, startDate, endDate }) => {
       try {
-        const data = await getDailyRollUp(env, dataType, startDate, endDate);
+        const data = await getDailyRollUp(env, userId, dataType, startDate, endDate);
         return jsonResult({ target, rawDailyData: data });
       } catch (err) {
         return errorResult(err);
@@ -244,7 +244,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await getDailyRollUp(env, DataType.activeEnergyBurned, startDate, endDate);
+        const data = await getDailyRollUp(env, userId, DataType.activeEnergyBurned, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -259,8 +259,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [activeMinutes, activeZoneMinutes] = await Promise.all([
-          getDailyRollUp(env, DataType.activeMinutes, startDate, endDate),
-          getDailyRollUp(env, DataType.activeZoneMinutes, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.activeMinutes, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.activeZoneMinutes, startDate, endDate),
         ]);
         return jsonResult({ activeMinutes, activeZoneMinutes });
       } catch (err) {
@@ -275,7 +275,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await getDailyRollUp(env, DataType.floors, startDate, endDate);
+        const data = await getDailyRollUp(env, userId, DataType.floors, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -289,7 +289,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPoints(env, DataType.altitude, startDate, endDate);
+        const data = await listDataPoints(env, userId, DataType.altitude, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -303,7 +303,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPoints(env, DataType.sedentaryPeriod, startDate, endDate);
+        const data = await listDataPoints(env, userId, DataType.sedentaryPeriod, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -317,7 +317,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await reconcileDataPoints(env, DataType.activityLevel, startDate, endDate);
+        const data = await reconcileDataPoints(env, userId, DataType.activityLevel, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -331,7 +331,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPoints(env, DataType.swimLengthsData, startDate, endDate);
+        const data = await listDataPoints(env, userId, DataType.swimLengthsData, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -350,9 +350,9 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [vo2Max, runVo2Max, dailyVo2Max] = await Promise.all([
-          listDataPointsUnfiltered(env, DataType.vo2Max),
-          listDataPointsUnfiltered(env, DataType.runVo2Max),
-          listDataPointsUnfiltered(env, DataType.dailyVo2Max),
+          listDataPointsUnfiltered(env, userId, DataType.vo2Max),
+          listDataPointsUnfiltered(env, userId, DataType.runVo2Max),
+          listDataPointsUnfiltered(env, userId, DataType.dailyVo2Max),
         ]);
         return jsonResult({ vo2Max, runVo2Max, dailyVo2Max });
       } catch (err) {
@@ -369,8 +369,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [hrv, dailyHrv] = await Promise.all([
-          listDataPointsUnfiltered(env, DataType.heartRateVariability),
-          listDataPointsUnfiltered(env, DataType.dailyHeartRateVariability),
+          listDataPointsUnfiltered(env, userId, DataType.heartRateVariability),
+          listDataPointsUnfiltered(env, userId, DataType.dailyHeartRateVariability),
         ]);
         return jsonResult({ heartRateVariability: hrv, dailyHeartRateVariability: dailyHrv });
       } catch (err) {
@@ -387,9 +387,9 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [dailyZones, timeInZones, caloriesInZones] = await Promise.all([
-          listDataPointsUnfiltered(env, DataType.dailyHeartRateZones),
-          getDailyRollUp(env, DataType.timeInHeartRateZone, startDate, endDate),
-          getDailyRollUp(env, DataType.caloriesInHeartRateZone, startDate, endDate),
+          listDataPointsUnfiltered(env, userId, DataType.dailyHeartRateZones),
+          getDailyRollUp(env, userId, DataType.timeInHeartRateZone, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.caloriesInHeartRateZone, startDate, endDate),
         ]);
         return jsonResult({ dailyZones, timeInZones, caloriesInZones });
       } catch (err) {
@@ -405,7 +405,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPointsUnfiltered(env, DataType.irregularRhythmNotification);
+        const data = await listDataPointsUnfiltered(env, userId, DataType.irregularRhythmNotification);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -420,7 +420,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPointsUnfiltered(env, DataType.electrocardiogram);
+        const data = await listDataPointsUnfiltered(env, userId, DataType.electrocardiogram);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -437,8 +437,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [bodyFat, height] = await Promise.all([
-          getDailyRollUp(env, DataType.bodyFat, startDate, endDate),
-          listDataPointsUnfiltered(env, DataType.height),
+          getDailyRollUp(env, userId, DataType.bodyFat, startDate, endDate),
+          listDataPointsUnfiltered(env, userId, DataType.height),
         ]);
         return jsonResult({ bodyFat, height });
       } catch (err) {
@@ -453,7 +453,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await getDailyRollUp(env, DataType.bloodGlucose, startDate, endDate);
+        const data = await getDailyRollUp(env, userId, DataType.bloodGlucose, startDate, endDate);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);
@@ -469,8 +469,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [coreTemp, sleepTempDerivations] = await Promise.all([
-          getDailyRollUp(env, DataType.coreBodyTemperature, startDate, endDate),
-          listDataPointsUnfiltered(env, DataType.dailySleepTemperatureDerivations),
+          getDailyRollUp(env, userId, DataType.coreBodyTemperature, startDate, endDate),
+          listDataPointsUnfiltered(env, userId, DataType.dailySleepTemperatureDerivations),
         ]);
         return jsonResult({ coreBodyTemperature: coreTemp, sleepTemperatureDerivations: sleepTempDerivations });
       } catch (err) {
@@ -487,8 +487,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [daily, sleepSummary] = await Promise.all([
-          listDataPointsUnfiltered(env, DataType.dailyRespiratoryRate),
-          listDataPointsUnfiltered(env, DataType.respiratoryRateSleepSummary),
+          listDataPointsUnfiltered(env, userId, DataType.dailyRespiratoryRate),
+          listDataPointsUnfiltered(env, userId, DataType.respiratoryRateSleepSummary),
         ]);
         return jsonResult({ dailyRespiratoryRate: daily, sleepSummary });
       } catch (err) {
@@ -507,8 +507,8 @@ export function registerTools(server: McpServer, env: Env): void {
     async ({ startDate, endDate }) => {
       try {
         const [hydration, nutrition] = await Promise.all([
-          getDailyRollUp(env, DataType.hydrationLog, startDate, endDate),
-          getDailyRollUp(env, DataType.nutritionLog, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.hydrationLog, startDate, endDate),
+          getDailyRollUp(env, userId, DataType.nutritionLog, startDate, endDate),
         ]);
         return jsonResult({ hydration, nutrition });
       } catch (err) {
@@ -524,7 +524,7 @@ export function registerTools(server: McpServer, env: Env): void {
     { startDate: dateParam(), endDate: dateParam() },
     async ({ startDate, endDate }) => {
       try {
-        const data = await listDataPointsUnfiltered(env, DataType.food);
+        const data = await listDataPointsUnfiltered(env, userId, DataType.food);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);

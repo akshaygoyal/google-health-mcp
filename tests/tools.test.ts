@@ -6,22 +6,24 @@ import type { Env } from "../src/auth.js";
 
 afterEach(() => vi.restoreAllMocks());
 
+const USER_ID = "test-user";
+
 // Capture registered tool handlers from registerTools without a real McpServer.
-function captureTools(env: Env): Record<string, (args: Record<string, unknown>) => Promise<unknown>> {
+function captureTools(env: Env, userId = USER_ID): Record<string, (args: Record<string, unknown>) => Promise<unknown>> {
   const tools: Record<string, (args: Record<string, unknown>) => Promise<unknown>> = {};
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: (args: Record<string, unknown>) => Promise<unknown>) => {
       tools[_name] = handler;
     },
   };
-  registerTools(mockServer as unknown as McpServer, env);
+  registerTools(mockServer as unknown as McpServer, env, userId);
   return tools;
 }
 
 // Seed env with a valid cached access token so auth passes in tool tests.
 function envWithToken(kvExtra: Record<string, string> = {}): Env {
   const store: Record<string, string> = {
-    google_access_token_cache: JSON.stringify({
+    [`user:${USER_ID}:access_token_cache`]: JSON.stringify({
       accessToken: "test-token",
       expiresAtMs: Date.now() + 3_600_000,
     }),
@@ -55,7 +57,7 @@ function stubFetchError(status: number, message: string) {
 
 describe("health_connection_status", () => {
   it("returns token status", async () => {
-    const env = envWithToken({ google_refresh_token: "tok" });
+    const env = envWithToken({ [`user:${USER_ID}:refresh_token`]: "tok" });
     const tools = captureTools(env);
     const result = await tools["health_connection_status"]({}) as { content: { text: string }[] };
     const data = JSON.parse(result.content[0].text);

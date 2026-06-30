@@ -7,6 +7,9 @@
  * `wrangler kv key put`. From then on, this module exchanges that refresh
  * token for short-lived access tokens on every request, caching the
  * access token in KV until it's close to expiry.
+ *
+ * Multi-user: each user's tokens are namespaced by their userId so multiple
+ * users can share a single Worker + KV namespace.
  */
 
 export interface Env {
@@ -16,8 +19,8 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string;
 }
 
-const REFRESH_TOKEN_KEY = "google_refresh_token";
-const ACCESS_TOKEN_CACHE_KEY = "google_access_token_cache";
+const refreshTokenKey = (userId: string) => `user:${userId}:refresh_token`;
+const accessTokenCacheKey = (userId: string) => `user:${userId}:access_token_cache`;
 
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
@@ -33,8 +36,8 @@ export class TokenError extends Error {}
  * Throws TokenError if no refresh token has been set up yet, or if Google
  * rejects the refresh (e.g. token was revoked).
  */
-export async function getAccessToken(env: Env): Promise<string> {
-  const cachedRaw = await env.HEALTH_TOKENS.get(ACCESS_TOKEN_CACHE_KEY);
+export async function getAccessToken(env: Env, userId: string): Promise<string> {
+  const cachedRaw = await env.HEALTH_TOKENS.get(accessTokenCacheKey(userId));
   if (cachedRaw) {
     const cached = JSON.parse(cachedRaw) as CachedAccessToken;
     // Refresh a bit early (60s buffer) to avoid edge-of-expiry failures.
@@ -43,11 +46,12 @@ export async function getAccessToken(env: Env): Promise<string> {
     }
   }
 
-  const refreshToken = await env.HEALTH_TOKENS.get(REFRESH_TOKEN_KEY);
+  const refreshToken = await env.HEALTH_TOKENS.get(refreshTokenKey(userId));
   if (!refreshToken) {
     throw new TokenError(
-      "No Google refresh token found in KV. Run `npm run token:setup` locally " +
-        "and store the result with `wrangler kv key put` before using this server."
+      `No Google refresh token found in KV for user "${userId}". ` +
+        `Run \`npm run token:setup -- --user=${userId}\` locally ` +
+        `and store the result with \`wrangler kv key put\` before using this server.`
     );
   }
 
@@ -80,7 +84,7 @@ export async function getAccessToken(env: Env): Promise<string> {
     accessToken: data.access_token,
     expiresAtMs: Date.now() + data.expires_in * 1000,
   };
-  await env.HEALTH_TOKENS.put(ACCESS_TOKEN_CACHE_KEY, JSON.stringify(cacheEntry), {
+  await env.HEALTH_TOKENS.put(accessTokenCacheKey(userId), JSON.stringify(cacheEntry), {
     expirationTtl: data.expires_in, // KV auto-expires the cache entry too
   });
 
@@ -88,13 +92,13 @@ export async function getAccessToken(env: Env): Promise<string> {
 }
 
 /** Used by the connection-status tool to report token health without throwing. */
-export async function getTokenStatus(env: Env): Promise<{
+export async function getTokenStatus(env: Env, userId: string): Promise<{
   hasRefreshToken: boolean;
   accessTokenCached: boolean;
   accessTokenExpiresAtMs: number | null;
 }> {
-  const refreshToken = await env.HEALTH_TOKENS.get(REFRESH_TOKEN_KEY);
-  const cachedRaw = await env.HEALTH_TOKENS.get(ACCESS_TOKEN_CACHE_KEY);
+  const refreshToken = await env.HEALTH_TOKENS.get(refreshTokenKey(userId));
+  const cachedRaw = await env.HEALTH_TOKENS.get(accessTokenCacheKey(userId));
   const cached = cachedRaw ? (JSON.parse(cachedRaw) as CachedAccessToken) : null;
   return {
     hasRefreshToken: Boolean(refreshToken),

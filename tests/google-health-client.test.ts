@@ -11,10 +11,12 @@ import { makeEnv, mockFetchOk, mockFetchError } from "./helpers.js";
 
 afterEach(() => vi.restoreAllMocks());
 
+const USER_ID = "test-user";
+
 // Seed the KV with an access token so auth doesn't block these tests.
 function envWithToken() {
   const kv: Record<string, string> = {
-    google_access_token_cache: JSON.stringify({
+    [`user:${USER_ID}:access_token_cache`]: JSON.stringify({
       accessToken: "test-access-token",
       expiresAtMs: Date.now() + 3_600_000,
     }),
@@ -37,7 +39,7 @@ describe("listDataPoints", () => {
     mockFetchOk({ dataPoints: [] });
     const env = envWithToken();
 
-    await listDataPoints(env, "steps", "2026-05-01", "2026-05-31");
+    await listDataPoints(env, USER_ID, "steps", "2026-05-01", "2026-05-31");
 
     const [url] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toContain("/dataTypes/steps/dataPoints");
@@ -50,7 +52,7 @@ describe("listDataPoints", () => {
     mockFetchError(400, "bad request");
     const env = envWithToken();
 
-    await expect(listDataPoints(env, "steps", "2026-05-01", "2026-05-31"))
+    await expect(listDataPoints(env, USER_ID, "steps", "2026-05-01", "2026-05-31"))
       .rejects.toThrow(GoogleHealthApiError);
   });
 });
@@ -60,7 +62,7 @@ describe("listDataPointsUnfiltered", () => {
     mockFetchOk({ dataPoints: [] });
     const env = envWithToken();
 
-    await listDataPointsUnfiltered(env, "exercise");
+    await listDataPointsUnfiltered(env, USER_ID, "exercise");
 
     const [url] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toContain("/dataTypes/exercise/dataPoints");
@@ -76,7 +78,7 @@ describe("listAllDataPointsUnfiltered", () => {
     })));
     const env = envWithToken();
 
-    const result = await listAllDataPointsUnfiltered(env, "exercise");
+    const result = await listAllDataPointsUnfiltered(env, USER_ID, "exercise");
 
     expect(result.dataPoints).toHaveLength(2);
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -99,7 +101,7 @@ describe("listAllDataPointsUnfiltered", () => {
     vi.stubGlobal("fetch", fetchMock);
     const env = envWithToken();
 
-    const result = await listAllDataPointsUnfiltered(env, "exercise");
+    const result = await listAllDataPointsUnfiltered(env, USER_ID, "exercise");
 
     expect(result.dataPoints).toHaveLength(3);
     expect(fetch).toHaveBeenCalledTimes(3);
@@ -112,7 +114,7 @@ describe("listAllDataPointsUnfiltered", () => {
     mockFetchOk({ dataPoints: [] });
     const env = envWithToken();
 
-    const result = await listAllDataPointsUnfiltered(env, "exercise");
+    const result = await listAllDataPointsUnfiltered(env, USER_ID, "exercise");
 
     expect(result.dataPoints).toHaveLength(0);
   });
@@ -121,7 +123,7 @@ describe("listAllDataPointsUnfiltered", () => {
     mockFetchOk({});
     const env = envWithToken();
 
-    const result = await listAllDataPointsUnfiltered(env, "exercise");
+    const result = await listAllDataPointsUnfiltered(env, USER_ID, "exercise");
 
     expect(result.dataPoints).toHaveLength(0);
   });
@@ -132,7 +134,7 @@ describe("getDailyRollUp", () => {
     mockFetchOk({ dataPoints: [] });
     const env = envWithToken();
 
-    await getDailyRollUp(env, "steps", "2026-05-01", "2026-05-31");
+    await getDailyRollUp(env, USER_ID, "steps", "2026-05-01", "2026-05-31");
 
     const [url, options] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toContain("/dataTypes/steps/dataPoints:dailyRollUp");
@@ -148,7 +150,7 @@ describe("reconcileDataPoints", () => {
     mockFetchOk({ dataPoints: [] });
     const env = envWithToken();
 
-    await reconcileDataPoints(env, "heart-rate", "2026-05-01", "2026-05-31");
+    await reconcileDataPoints(env, USER_ID, "heart-rate", "2026-05-01", "2026-05-31");
 
     const [url] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toContain("/dataTypes/heart-rate/dataPoints:reconcile");

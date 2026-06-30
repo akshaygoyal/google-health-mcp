@@ -9,10 +9,10 @@
  *        GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
  *   2. In your Google Cloud OAuth client, add this exact redirect URI:
  *        http://127.0.0.1:8765/callback
- *   3. Run: npm run token:setup
+ *   3. Run: npm run token:setup -- --user=<userId>
+ *        e.g. npm run token:setup -- --user=alice
  *   4. Approve access in the browser window that opens.
- *   5. Copy the printed refresh token, then run:
- *        wrangler kv key put --binding=HEALTH_TOKENS google_refresh_token "PASTE_HERE"
+ *   5. Copy the printed wrangler command and run it to store the token in KV.
  *
  * IMPORTANT: verify the scope strings below against
  * https://developers.google.com/health/scopes before running this — the
@@ -29,6 +29,17 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = "http://127.0.0.1:8765/callback";
 const PORT = 8765;
+
+const userArg = process.argv.find((a) => a.startsWith("--user="));
+const userId = userArg?.split("=")[1];
+if (!userId || !/^[a-zA-Z0-9_-]+$/.test(userId)) {
+  console.error(
+    "Specify a user ID with --user=<userId> (alphanumeric, hyphens, underscores).\n" +
+      "Example:\n" +
+      "  npm run token:setup -- --user=alice"
+  );
+  process.exit(1);
+}
 
 const SCOPES = [
   "https://www.googleapis.com/auth/googlehealth.profile.readonly",
@@ -105,8 +116,9 @@ const server = http.createServer(async (req, res) => {
     } else {
       console.log("\n✅ Got a refresh token. Store it in Cloudflare KV with:\n");
       console.log(
-        `wrangler kv key put --binding=HEALTH_TOKENS google_refresh_token "${data.refresh_token}"\n`
+        `wrangler kv key put --binding=HEALTH_TOKENS "user:${userId}:refresh_token" "${data.refresh_token}"\n`
       );
+      console.log(`Then connect your MCP client to: https://<your-worker>/mcp/${userId}/<MCP_SHARED_SECRET>\n`);
     }
   } catch (err) {
     console.error("Token exchange failed:", err);
