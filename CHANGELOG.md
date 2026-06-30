@@ -4,6 +4,22 @@ All notable changes to this project will be documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-30
+
+### Added
+- **Multi-user support**: each user's Google OAuth tokens are now stored in Cloudflare KV under namespaced keys (`user:<userId>:refresh_token`, `user:<userId>:access_token_cache`), allowing multiple users to share a single Worker deployment
+- The MCP endpoint URL changes from `/mcp/<secret>` to `/mcp/<userId>/<secret>` — each user gets their own personal URL
+- `token:setup` script now requires a `--user=<userId>` argument and prints the correctly namespaced `wrangler kv key put` command
+- Weekly GitHub Actions workflow (`.github/workflows/monitor-api.yml`) to detect changes to the Google Health API and open a tracking issue automatically
+
+### Migration from 0.2.0
+Re-run the token setup with a user ID and store the token under the new key:
+```bash
+GOOGLE_CLIENT_ID=your-id GOOGLE_CLIENT_SECRET=your-secret npm run token:setup -- --user=alice
+wrangler kv key put --binding=HEALTH_TOKENS "user:alice:refresh_token" "your-refresh-token"
+```
+Update your MCP client's connector URL from `/mcp/<secret>` to `/mcp/alice/<secret>`. The old `google_refresh_token` KV key is no longer read and can be deleted.
+
 ## [0.2.0] - 2026-06-26
 
 ### Added
